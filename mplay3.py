@@ -39,6 +39,8 @@ def display_text(screen, mode, status, song_info, volume=None):
       screen.addstr(25, 0, f"Mode   Play/Pause   Stop      Next")
     elif mode == MODE_VOLUME:
       screen.addstr(25, 0, f"Mode    Vol +5%    Vol -5%    Prev")      
+    elif mode == MODE_SYSTEM:
+      screen.addstr(25, 0, f"Mode                          Quit")      
     screen.refresh()
 
 # Set GPIO mode
@@ -59,6 +61,7 @@ counter = 0
 # Define the modes
 MODE_PLAY = 1
 MODE_VOLUME = 2
+MODE_SYSTEM = 3
 
 # Main program
 def main(stdscr):
@@ -71,6 +74,8 @@ def main(stdscr):
 
     while True:
         if (GPIO.input(27) == False):
+            current_mode = (current_mode + 1) % 3
+
             # Switch between MODE_PLAY and MODE_VOLUME
             current_mode = MODE_VOLUME if current_mode == MODE_PLAY else MODE_PLAY
             display_text(stdscr, current_mode, mpd_status, song_info)
@@ -106,6 +111,11 @@ def main(stdscr):
             if (GPIO.input(17) == False):
                 print("Previous song")
                 mpd_control("prev")
+                time.sleep(0.5)
+        elif current_mode == MODE_SYSTEM:
+            if (GPIO.input(17) == False):
+                print("Shutdown")
+                os.system("sudo halt")  # Send shutdown command when GPIO 17 is pressed
                 time.sleep(0.5)
 
         # Update song_info and mpd_status
