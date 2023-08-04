@@ -40,7 +40,7 @@ def display_text(screen, mode, status, song_info, volume=None):
     elif mode == MODE_VOLUME:
       screen.addstr(25, 0, f"Mode    Vol +5%    Vol -5%    Prev")      
     elif mode == MODE_SYSTEM:
-      screen.addstr(25, 0, f"Mode                          Quit")      
+      screen.addstr(25, 0, f"Mode     mount      Load      Quit")      
     screen.refresh()
 
 # Set GPIO mode
@@ -74,11 +74,11 @@ def main(stdscr):
 
     while True:
         if (GPIO.input(27) == False):
-            current_mode = (current_mode + 1) % 3
+            current_mode = (current_mode % 3) + 1
 
             # Switch between MODE_PLAY and MODE_VOLUME
-            current_mode = MODE_VOLUME if current_mode == MODE_PLAY else MODE_PLAY
-            display_text(stdscr, current_mode, mpd_status, song_info)
+            #current_mode = MODE_VOLUME if current_mode == MODE_PLAY else MODE_PLAY
+            ###display_text(stdscr, current_mode, mpd_status, song_info)
             time.sleep(0.5)
 
         # Check button inputs based on the current mode
@@ -113,9 +113,20 @@ def main(stdscr):
                 mpd_control("prev")
                 time.sleep(0.5)
         elif current_mode == MODE_SYSTEM:
+            if (GPIO.input(23) == False):
+                # Toggle between mount and unmount
+                media_path = "/media"
+                mounted = subprocess.check_output(["mountpoint", "-q", media_path]).strip()
+                if mounted:
+                    print("Unmount")
+                    subprocess.run(["sudo", "umount", "/dev/sda1"])
+                else:
+                    print("Mount")
+                    subprocess.run(["sudo", "mount", "/dev/sda1", media_path])
+                time.sleep(0.5)
             if (GPIO.input(17) == False):
                 print("Shutdown")
-                os.system("sudo halt")  # Send shutdown command when GPIO 17 is pressed
+                os.system("sudo halt")
                 time.sleep(0.5)
 
         # Update song_info and mpd_status
